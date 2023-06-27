@@ -1,0 +1,89 @@
+mqtt:
+  host: 192.168.1.2
+
+detectors:
+  coral:
+    type: edgetpu
+    device: ""
+
+cameras:
+  camera_1:
+    ffmpeg:
+      inputs:
+        - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
+          roles:
+            - rtmp
+            - record
+        - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1 # detection path uses lower resolution channel
+          roles:
+            - detect
+    snapshots:
+      enabled: True
+    detect:
+      width: 640
+      height: 480
+      fps: 3
+# Uncomment for additional cameras
+  # camera_2:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
+  #         roles:
+  #           - rtmp
+  #           - record
+  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1
+  #         roles:
+  #           - detect
+  #   snapshots:
+  #     enabled: True
+  #   detect:
+  #      width: 640
+  #      height: 480
+  #      fps: 3
+  # camera_3:
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
+  #         roles:
+  #           - rtmp
+  #           - record
+  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1
+  #         roles:
+  #           - detect
+  #   snapshots:
+  #     enabled: True
+  #   detect:
+  #     width: 640
+  #     height: 480
+  #     fps: 3
+
+objects:
+  # Optional: list of objects to track from labelmap.txt
+  track:
+    - person
+    - bicycle
+    - car
+    - motorcycle
+    - cat
+    - dog
+
+ffmpeg:
+  output_args:
+    record: -f segment -segment_time 10 -segment_format mp4 -reset_timestamps 1 -strftime 1 -c:v copy -c:a aac
+
+record:
+  enabled: True
+  retain:
+    days: 3
+    mode: motion
+  events:
+    retain:
+      default: 7
+      mode: active_objects
+    # Optional: Number of seconds before the event to include
+    pre_capture: 15
+    # Optional: Number of seconds after the event to include
+    post_capture: 30
+    # Optional: Restrict recordings to objects that entered any of the listed zones (default: no required zones)
+    required_zones: []
+    # Optional: Retention settings for recordings of events
