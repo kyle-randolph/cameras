@@ -1,61 +1,64 @@
 mqtt:
-  host: 192.168.1.2
+  enabled: false
 
 detectors:
-  coral:
-    type: edgetpu
-    device: ""
+  cpu:
+    type: openvino
+    device: GPU
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+# model:
+#   model_type: yolonas
+#   width: 320 # <--- should match whatever was set in notebook
+#   height: 320 # <--- should match whatever was set in notebook
+#   input_tensor: nchw
+#   input_pixel_format: bgr
+#   path: /config/yolo_nas_s.onnx
+#   labelmap_path: /labelmap/coco-80.txt
+
 
 cameras:
-  camera_1:
+  camera1:
     ffmpeg:
       inputs:
-        - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
+        - path: 
+            rtsp://<USERNAME>:<PASSWORD>@<IP>:554/cam/realmonitor?channel=1&subtype=0 
           roles:
-            - rtmp
             - record
-        - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1 # detection path uses lower resolution channel
+        - path: 
+            rtsp://<USERNAME>:<PASSWORD>@<IP>:554/cam/realmonitor?channel=1&subtype=1 
           roles:
             - detect
     snapshots:
-      enabled: True
+      enabled: true
     detect:
       width: 640
       height: 480
       fps: 3
-# Uncomment for additional cameras
-  # camera_2:
-  #   ffmpeg:
-  #     inputs:
-  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
-  #         roles:
-  #           - rtmp
-  #           - record
-  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1
-  #         roles:
-  #           - detect
-  #   snapshots:
-  #     enabled: True
-  #   detect:
-  #      width: 640
-  #      height: 480
-  #      fps: 3
-  # camera_3:
-  #   ffmpeg:
-  #     inputs:
-  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=0
-  #         roles:
-  #           - rtmp
-  #           - record
-  #       - path: rtsp://USERNAME:PASSWORD@192.168.1.2:554/cam/realmonitor?channel=1&subtype=1
-  #         roles:
-  #           - detect
-  #   snapshots:
-  #     enabled: True
-  #   detect:
-  #     width: 640
-  #     height: 480
-  #     fps: 3
+  camera2:
+    ffmpeg:
+      inputs:
+        - path: 
+            rtsp://<USERNAME>:<PASSWORD>@<IP>:554/cam/realmonitor?channel=1&subtype=0
+          roles:
+            - record
+        - path: 
+            rtsp://<USERNAME>:<PASWORD>@<IP>:554/cam/realmonitor?channel=1&subtype=1
+          roles:
+            - detect
+    snapshots:
+      enabled: true
+    detect:
+      width: 640
+      height: 480
+      fps: 3
 
 objects:
   # Optional: list of objects to track from labelmap.txt
@@ -67,23 +70,61 @@ objects:
     - cat
     - dog
 
+
+detect:
+  # min_initialized: 1
+  stationary:
+    interval: 30
+    threshold: 30
+
 ffmpeg:
+  #global_args: -hide_banner
+  #hwaccel_args: preset-vaapi #preset-nvidia-h264 
+  input_args:
+    - "-fflags"
+    - "nobuffer"
+    - "-flags"
+    - "low_delay"
+    - "-strict"
+    - "experimental"
+    - "-rtsp_transport"
+    - "tcp"
+
   output_args:
-    record: -f segment -segment_time 10 -segment_format mp4 -reset_timestamps 1 -strftime 1 -c:v copy -c:a aac
+    record: 
+      - "-f"
+      - "segment"
+      - "-segment_time"
+      - "60"
+      - "-segment_format"
+      - "mp4"
+      - "-reset_timestamps"
+      - "1"
+      - "-strftime"
+      - "1"
+      - "-c:v"
+      - "copy"
+      - "-c:a"
+      - "aac"
 
 record:
   enabled: True
+  preview:
+    quality: medium
   retain:
     days: 3
     mode: motion
   events:
     retain:
-      default: 7
+      default: 14
       mode: active_objects
     # Optional: Number of seconds before the event to include
     pre_capture: 15
     # Optional: Number of seconds after the event to include
     post_capture: 30
     # Optional: Restrict recordings to objects that entered any of the listed zones (default: no required zones)
-    required_zones: []
+    #required_zones: []
+    #version: 0.14
     # Optional: Retention settings for recordings of events
+version: 0.14
+

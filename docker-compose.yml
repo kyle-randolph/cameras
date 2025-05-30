@@ -1,38 +1,29 @@
-version: "3.9"
 services:
   frigate:
     container_name: frigate
-    privileged: true # this may not be necessary for all setups
+    privileged: true 
     restart: unless-stopped
-    image: blakeblackshear/frigate:stable
-    shm_size: "64mb" # update for your cameras based on calculation above
-    # devices:
-    #   - /dev/bus/usb:/dev/bus/usb # passes the USB Coral, needs to be modified for other versions
-    #   - /dev/apex_0:/dev/apex_0 # passes a PCIe Coral, follow driver instructions here https://coral.ai/docs/m2/get-started/#2a-on-linux
-    #   - /dev/dri/renderD128 # for intel hwaccel, needs to be updated for your hardware
+    image: ghcr.io/blakeblackshear/frigate:0.14.1
+    cap_add:
+      - CAP_PERFMON
+    shm_size: "2G"
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
     volumes:
       - /etc/localtime:/etc/localtime:ro
-      - /var/docker/frigate/config.yml:/config/config.yml:ro
-      - /mnt/sda_external/surveillance/frigate:/media/frigate # Path to external for video saves
-      - type: tmpfs # Optional: 1GB of memory, reduces SSD/SD Card wear
+      - /opt/frigate/config:/config
+      - /media/cctv_recording:/media/frigate
+      - type: tmpfs
         target: /tmp/cache
         tmpfs:
-          size: 1000000000
+          size: 2G
     ports:
       - "5000:5000"
-      - "1935:1935" # RTMP feeds
+      - "8971:8971"
+      - "1984:1984"
+      - "8554:8554" # RTSP feeds
+      - "8555:8555/tcp" # WebRTC over tcp
+      - "8555:8555/udp" # WebRTC over udp
     environment:
       FRIGATE_RTSP_PASSWORD: "password"
-
-  mqtt:
-    image: eclipse-mosquitto:1.6.14
-    container_name: mqtt
-    hostname: mqtt
-    ports:
-      - 1883:1883
-      - 9001:9001
-    volumes:
-      - /var/docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
-    restart: unless-stopped
-    # networks:
-    #   - defaulConnection to 192.168.1.2 closed by remote host.
